@@ -7,6 +7,11 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include "postgres.h"
+#include <fmgr.h>
+PG_MODULE_MAGIC;
+
+
 #define SIZE_SZ (sizeof(size_t))
 #define MALLOC_ALIGNMENT (2 * SIZE_SZ < __alignof__(long double) ? __alignof__(long double) : 2 * SIZE_SZ)
 #define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
@@ -162,8 +167,14 @@ dump_non_main_heap(const char *path, const struct heap_info *heap) {
 	fclose(f);
 }
 
-void
-dump_non_main_heaps(const char *path, struct malloc_state *main_arena) {
+PG_FUNCTION_INFO_V1(dump_non_main_heaps);
+//void
+//dump_non_main_heaps(const char *path, struct malloc_state *main_arena) {
+Datum
+dump_non_main_heaps(PG_FUNCTION_ARGS) {
+	const char *path = PG_GETARG_CSTRING(0);
+        struct malloc_state *main_arena = (struct malloc_state *) PG_GETARG_POINTER(1);
+
 	struct malloc_state *ar_ptr = main_arena->next;
 	while (ar_ptr != main_arena) {
 		struct heap_info *heap = heap_for_ptr(ar_ptr->top);
@@ -173,17 +184,26 @@ dump_non_main_heaps(const char *path, struct malloc_state *main_arena) {
 		} while (heap != NULL);
 		ar_ptr = ar_ptr->next;
 	}
+	PG_RETURN_VOID();
 }
 
-void
-dump_main_heap(const char *path, struct malloc_state *main_arena) {
+PG_FUNCTION_INFO_V1(dump_main_heap);
+
+//void
+//dump_main_heap(const char *path, struct malloc_state *main_arena) {
+Datum
+dump_main_heap(PG_FUNCTION_ARGS) {
+	const char *path = PG_GETARG_CSTRING(0);
+        struct malloc_state *main_arena = (struct malloc_state *) PG_GETARG_POINTER(1);
+
 	struct malloc_chunk *base, *p;
 	FILE *f = fopen(path, "a");
 	long pageSize = sysconf(_SC_PAGESIZE);
 
 	if (f == NULL) {
-		fprintf(stderr, "ERROR: cannot open %s for writing.\n", path);
-		return;
+		ereport(ERROR, (errmsg("ERROR: cannot open %s for writing.\n", path)));
+		PG_RETURN_VOID();
+		//return;
 	}
 
 	base = (struct malloc_chunk *) (((const char *) main_arena->top)
@@ -218,4 +238,5 @@ dump_main_heap(const char *path, struct malloc_state *main_arena) {
 	}
 
 	fclose(f);
+	PG_RETURN_VOID();
 }

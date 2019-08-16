@@ -1,3 +1,9 @@
+gcc -shared -g ptmallocdump.c -fPIC -o libptmallocdump.so -Wall -fno-strict-aliasing -I /usr/include/postgresql/11/server
+
+create function dump_main_heap( cstring , bigint) returns void as '/home/will/heap_dumper_visualizer/libptmallocdump.so', 'dump_main_heap' language c strict;
+
+create function dump_non_main_heaps( cstring , bigint) returns void as '/home/will/heap_dumper_visualizer/libptmallocdump.so', 'dump_main_heap' language c strict;
+
 # ptmalloc2 heap dumper and visualizer
 
 This is a tool for dumping the ptmalloc2 heap into a file, and for visualizing that dump. I wrote this as part of my research into [what causes memory bloating in Ruby](https://www.joyfulbikeshedding.com/blog/2019-03-14-what-causes-ruby-memory-bloat.html).
