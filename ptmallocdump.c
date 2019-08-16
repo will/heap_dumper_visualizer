@@ -167,6 +167,13 @@ dump_non_main_heap(const char *path, const struct heap_info *heap) {
 	fclose(f);
 }
 
+PG_FUNCTION_INFO_V1(malloc_trim);
+Datum
+malloc_trim(PG_FUNCTION_ARGS) {
+	malloc_trim(0);
+	PG_RETURN_VOID();
+}
+	
 PG_FUNCTION_INFO_V1(dump_non_main_heaps);
 //void
 //dump_non_main_heaps(const char *path, struct malloc_state *main_arena) {
